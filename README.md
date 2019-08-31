@@ -16,7 +16,7 @@ There must be two additional files in the same folder with `kjbot.py`:
 
 `balance.txt` and `config.py`
 
-### Structure of balance.txt:
+### Structure of balance.txt
 
 Just one line will suffice:
 
@@ -24,7 +24,7 @@ Just one line will suffice:
 
 The bot will change the numbers to what they must be as payments take place.
 
-### Structure of config.py:
+### Structure of config.py
 
 ```python
 chat_id = 123456789
@@ -46,7 +46,7 @@ token = "longer-than-I-could-make-up-here"
 
 #### Obtaining chat_id of the group
 
-The bot will tell you the `chat_id` as a reply to the command `/start`.
+Add this bot to your group: [Chat ID Echo](https://telegram.me/chatid_echo_bot)
 
 #### Obtaining token
 
