@@ -46,6 +46,7 @@ def error(update, context):
     logger.warning('Update "%s" caused error "%s"', update, context.error)
 
 def start_callback(update, context):
+    update.message.reply_text('Your chat id is:\n\n' + str(update.message.chat_id))
     if correct_chat(update.message.chat_id):
         msg = "Hi dear master, "
         msg += str(update.message.from_user.username)
