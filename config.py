@@ -1,4 +1,4 @@
-chat_id = 
+chat_id =
 
 user1_id =
 user2_id =

@@ -167,6 +167,8 @@ def button_callback(update, context):
 
     amount, paidfrom, paidto = query.data.split(',')[:3]
 
+    #This works because our user ids start with different numbers
+
     if paidfrom == config.user1_id[0]:
         paidfrom = config.user1_id
     elif paidfrom == config.user3_id[0]:
