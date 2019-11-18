@@ -112,6 +112,12 @@ def spent_callback(update, context):
 
     display_status(update, context, balance_before)
 
+    context.bot.send_message(chat_id=config.user1_id, text=update.message.text[7:], parse_mode='markdown')
+
+    context.bot.send_message(chat_id=config.user2_id, text=update.message.text[7:], parse_mode='markdown')
+
+    context.bot.send_message(chat_id=config.user3_id, text=update.message.text[7:], parse_mode='markdown')
+
 def paid_callback(update, context):
     global clickable_button
     if correct_chat(update.message.chat_id) is False:
