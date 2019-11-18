@@ -78,14 +78,14 @@ def spent_callback(update, context):
         update.message.reply_text('How much did you spend?')
         return
 
-    if amount[0] == '0' or amount[0:2] == '-0':
-        update.message.reply_text('Please don\'t start with a zero')
-        return
-
     try:
         amount_flt = float(amount)
     except:
         update.message.reply_text('Such a waste!')
+        return
+
+    if amount_flt == 0:
+        update.message.reply_text('What, really?')
         return
 
     with open('balance.txt') as file:
@@ -135,14 +135,14 @@ def paid_callback(update, context):
         update.message.reply_text('How much did you pay?')
         return
 
-    if amount[0] == '0' or amount[0:2] == '-0':
-        update.message.reply_text('Please don\'t start with a zero')
-        return
-
     try:
         amount_flt = float(amount)
     except:
         update.message.reply_text('We do not accept such payments here!')
+        return
+
+    if amount_flt == 0:
+        update.message.reply_text('What, really?')
         return
 
     amount = str(amount) + ','
