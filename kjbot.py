@@ -123,12 +123,11 @@ def spent_callback(update, context):
     context.bot.send_message(chat_id=config.user3_id, text=update.message.text[7:], parse_mode='markdown')
 
 def paid_callback(update, context):
-    global clickable_button
+
     if correct_chat(update.message.chat_id) is False:
         update.message.reply_text('Not the right chat :D')
         return
 
-    clickable_button = True
     try:
         amount = update.message.text.split(' ')[1]
     except:
@@ -145,63 +144,37 @@ def paid_callback(update, context):
         update.message.reply_text('What, really?')
         return
 
-    amount = str(amount) + ','
+    paidfrom = update.message.from_user.id
+    paidfrom = str(paidfrom)
+
+    try:
+        paidto_nickname = update.message.text.split(' ')[2]
+        if paidfrom == config.user1_id:
+            if paidto_nickname in config.user2_nicknames:
+                paidto = config.user2_id
+            if paidto_nickname in config.user3_nicknames:
+                paidto = config.user3_id
+        if paidfrom == config.user2_id:
+            if paidto_nickname in config.user1_nicknames:
+                paidto = config.user1_id
+            if paidto_nickname in config.user3_nicknames:
+                paidto = config.user3_id
+        if paidfrom == config.user3_id:
+            if paidto_nickname in config.user1_nicknames:
+                paidto = config.user1_id
+            if paidto_nickname in config.user2_nicknames:
+                paidto = config.user2_id
+    except:
+        update.message.reply_text('To whom, though?')
+        return
 
     with open('balance.txt') as file:
         balance = file.read().split(',')
 
-    balances = ',' + str("%.2f" % float(balance[0])) + ',' + str("%.2f" % float(balance[1])) + ',' + str("%.2f" % float(balance[2]))
+    balance_before = balance
 
-    if str(update.message.from_user.id) == config.user1_id:
-        keyboard = [[telegram.InlineKeyboardButton(config.user2_name, callback_data=amount + config.user1_id[0] + ',' + config.user2_id[0] + balances)],[telegram.InlineKeyboardButton(config.user3_name, callback_data=amount + config.user1_id[0] + ',' + config.user3_id[0] + balances)]]
-    elif str(update.message.from_user.id) == config.user2_id:
-        keyboard = [[telegram.InlineKeyboardButton(config.user1_name, callback_data=amount + config.user2_id[0] + ',' + config.user1_id[0] + balances)],[telegram.InlineKeyboardButton(config.user3_name, callback_data=amount + config.user2_id[0] + ',' + config.user3_id[0] + balances)]]
-    elif str(update.message.from_user.id) == config.user3_id:
-        keyboard = [[telegram.InlineKeyboardButton(config.user1_name, callback_data=amount + config.user3_id[0] + ',' + config.user1_id[0] + balances)],[telegram.InlineKeyboardButton(config.user2_name, callback_data=amount + config.user3_id[0] + ',' + config.user2_id[0] + balances)]]
-    else:
-        update.message.reply_text('Who are you :D')
-        return
-
-    reply_markup = telegram.InlineKeyboardMarkup(keyboard)
-    update.message.reply_text('To whom did you pay?', reply_markup = reply_markup)
-
-def button_callback(update, context):
-    global clickable_button
-
-
-    # When the button is pressed more than once
-    if clickable_button == False:
-        return
-
-    clickable_button = False
-
-    query = update.callback_query
-
-    balance_before = [0,0,0]
-
-    amount, paidfrom, paidto = query.data.split(',')[:3]
-
-    #This works because our user ids start with different numbers
-
-    if paidfrom == config.user1_id[0]:
-        paidfrom = config.user1_id
-    elif paidfrom == config.user3_id[0]:
-        paidfrom = config.user3_id
-    elif paidfrom == config.user2_id[0]:
-        paidfrom = config.user2_id
-
-    if paidto == config.user1_id[0]:
-        paidto = config.user1_id
-    elif paidto == config.user3_id[0]:
-        paidto = config.user3_id
-    elif paidto == config.user2_id[0]:
-        paidto = config.user2_id
-
-    balance_before = query.data.split(',')[3:6]
-
-    with open('balance.txt') as file:
-        balance = file.read().split(',')
     balance_num = [0,0,0]
+
     for i in range(len(balance_num)):
         balance_num[i] = float(balance[i])
 
@@ -210,7 +183,7 @@ def button_callback(update, context):
         balance_num[users[paidto]]   -= float(amount)
     except:
         update.message.reply_text('Nope')
-
+        return
 
     with open('balance.txt', 'w') as file:
         data = ''
@@ -239,7 +212,6 @@ def main():
     dp.add_handler(CommandHandler("start", start_callback))
     dp.add_handler(CommandHandler("help", help_callback))
     dp.add_handler(CommandHandler("spent", spent_callback))
-    dp.add_handler(CallbackQueryHandler(button_callback))
     dp.add_handler(CommandHandler("paid", paid_callback))
     dp.add_handler(CommandHandler("status", status_callback))
  #   dp.add_handler(CommandHandler("IBAN", IBAN_callback)) #ONUR
