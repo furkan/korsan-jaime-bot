@@ -37,6 +37,10 @@ user1_name = "good"
 user2_name = "bad"
 user3_name = "ugly"
 
+user1_nicknames = ['good','well']
+user2_nicknames = ['bad','riri']
+user3_nicknames = ['ugly','unattractive']
+
 token = "longer-than-I-could-make-up-here"
 ```
 
