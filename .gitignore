@@ -1,4 +1,4 @@
 config.py
-app/balance.txt
+balance.txt
 __pycache__/
 venv/
