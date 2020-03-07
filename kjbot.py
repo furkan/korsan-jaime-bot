@@ -2,15 +2,26 @@ from flask import Flask, request
 import telebot
 import config
 import logging
+from bs4 import BeautifulSoup
+import requests
+import time
 
 TOKEN = config.token
 secret = config.secret
 url = config.URL + secret
 
+users = {
+    config.user1_id:0,
+    config.user2_id:1,
+    config.user3_id:2
+}
+
+initial_unix_date = time.time()
+number_of_people = 3.0
+
 logger = telebot.logger
 telebot.logger.setLevel(logging.DEBUG)
 
-global bot
 bot = telebot.TeleBot(TOKEN, threaded=False)
 bot.remove_webhook()
 bot.set_webhook(url=url)
@@ -24,7 +35,7 @@ def correct_chat(chat_id):
         return False
 
 def display_status(m, balance_before = ['', '', '']):
-    with open('balance.txt') as file:
+    with open('/home/kjbot/korsan-jaime-bot/balance.txt') as file:
         balance = file.read().split(',')
 
     if balance_before != ['','','']:
@@ -32,9 +43,9 @@ def display_status(m, balance_before = ['', '', '']):
     else:
         balance_before_strings = ['','','']
 
-    msg  =  '*furkan:*\n' + str("%.2f" % float(balance[0])) + balance_before_strings[0] \
-        + '\n*tanış: *\n' + str("%.2f" % float(balance[1])) + balance_before_strings[1] \
-        + '\n*dikici:*\n' + str("%.2f" % float(balance[2])) + balance_before_strings[2]
+    msg  =  '*'+ config.user1_name + ':*\n' + str("%.2f" % float(balance[0])) + balance_before_strings[0] \
+        + '\n*'+ config.user2_name + ': *\n' + str("%.2f" % float(balance[1])) + balance_before_strings[1] \
+        + '\n*'+ config.user3_name + ':*\n' + str("%.2f" % float(balance[2])) + balance_before_strings[2]
     try:
         bot.reply_to(m, msg, parse_mode='Markdown')
     except:
@@ -43,19 +54,19 @@ def display_status(m, balance_before = ['', '', '']):
 def check_payment(m):
     if correct_chat(m.chat.id) is False:
         bot.reply_to(m, config.wrong_chat_txt)
-        return 0
+        return 'no'
 
     try:
         amount = m.text.split(' ')[1]
     except:
         bot.reply_to(m, config.empty_txt)
-        return 0
+        return 'no'
 
     try:
         amount_flt = float(amount)
     except:
         bot.reply_to(m, config.not_a_number_txt)
-        return 0
+        return 'no'
 
     return amount_flt
 
@@ -85,7 +96,7 @@ def find_payee(m,paidfrom):
 
 def edit_balances(m, amount_flt, info):
 
-    with open('balance.txt') as file:
+    with open('/home/kjbot/korsan-jaime-bot/balance.txt') as file:
         balance = file.read().split(',')
 
     balance_before = balance
@@ -99,13 +110,13 @@ def edit_balances(m, amount_flt, info):
         for i in range(len(balance_num)):
             if i == users[str(m.from_user.id)]:
                 try:
-                    balance_num[i] += 2.0 * amount_flt / 3.0
+                    balance_num[i] += (number_of_people - 1.0) * amount_flt / number_of_people
                 except:
                     bot.reply_to(m, 'Nope')
                     return 0
             else:
                 try:
-                    balance_num[i] -= amount_flt / 3.0
+                    balance_num[i] -= amount_flt / number_of_people
                 except:
                     bot.reply_to(m, 'Nope')
                     return 0
@@ -118,7 +129,7 @@ def edit_balances(m, amount_flt, info):
             bot.reply_to(m, 'Nope')
             return 0
 
-    with open('balance.txt', 'w') as file:
+    with open('/home/kjbot/korsan-jaime-bot/balance.txt', 'w') as file:
         data = ''
         for i in range(len(balance_num)):
             data += str(balance_num[i]) + ','
@@ -128,14 +139,47 @@ def edit_balances(m, amount_flt, info):
 
     return balance_before
 
-@app.route('/'+secret+'/', methods=['POST'])
+@app.route('/'+secret, methods=['POST'])
 def webhook():
     update = telebot.types.Update.de_json(request.stream.read().decode('utf-8'))
     bot.process_new_updates([update])
     return 'ok', 200
 
+@bot.message_handler(commands=['insta'])
+def insta(m):
+    if m.date < initial_unix_date:
+        return 'old message'
+
+    if not correct_chat(m.chat.id):
+        bot.reply_to(m, config.wrong_chat_txt)
+        return 'not the right chat'
+
+    try:
+        username = m.text.split(' ')[1]
+    except:
+        bot.reply_to(m, config.empty_txt)
+        return 'no'
+
+    url = 'https://www.instagram.com/' + username
+
+    res = requests.get(url)
+
+    soup = BeautifulSoup(res.text, 'html.parser')
+
+    title = soup.title.text.split('•')[0]
+
+    title = title.strip()
+
+    if title == 'Page Not Found':
+        bot.reply_to(m, 'kullanici adi musait')
+    else:
+        bot.reply_to(m, title + ' tarafindan kullaniliyor')
+
 @bot.message_handler(commands=['start'])
 def start(m):
+    if m.date < initial_unix_date:
+        return 'old message'
+
     if not correct_chat(m.chat.id):
         bot.reply_to(m, config.wrong_chat_txt)
         return 'not the right chat'
@@ -144,19 +188,28 @@ def start(m):
 
 @bot.message_handler(commands=['help'])
 def help(m):
+    if m.date < initial_unix_date:
+        return 'old message'
+
     if not correct_chat(m.chat.id):
         bot.reply_to(m, config.wrong_chat_txt)
         return 'not the right chat'
 
-    bot.reply_to(m, config.help_txt)
+    bot.reply_to(m, config.help_txt, parse_mode='Markdown')
 
 @bot.message_handler(commands=['spent'])
 def spent(m):
+    if m.date < initial_unix_date:
+        return 'old message'
+
     if not correct_chat(m.chat.id):
         bot.reply_to(m, config.wrong_chat_txt)
         return 'not the right chat'
 
     amount_flt = check_payment(m)
+
+    if amount_flt == 'no':
+        return
 
     if amount_flt == 0:
         bot.reply_to(m, config.zero_txt)
@@ -178,6 +231,9 @@ def spent(m):
 
 @bot.message_handler(commands=['paid'])
 def paid(m):
+    if m.date < initial_unix_date:
+        return 'old message'
+
     if not correct_chat(m.chat.id):
         bot.reply_to(m, config.wrong_chat_txt)
         return 'not the right chat'
@@ -205,6 +261,9 @@ def paid(m):
 
 @bot.message_handler(commands=['status'])
 def status(m):
+    if m.date < initial_unix_date:
+        return 'old message'
+
     if not correct_chat(m.chat.id):
         bot.reply_to(m, config.wrong_chat_txt)
         return 'not the right chat'
