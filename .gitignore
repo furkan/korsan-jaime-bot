@@ -2,3 +2,4 @@ config.py
 balance.txt
 __pycache__/
 venv/
+kjbot-eski.py
