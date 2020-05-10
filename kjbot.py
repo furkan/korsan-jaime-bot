@@ -2,8 +2,6 @@ from flask import Flask, request
 import telebot
 import config
 import logging
-from bs4 import BeautifulSoup
-import requests
 import time
 
 TOKEN = config.token
@@ -144,36 +142,6 @@ def webhook():
     update = telebot.types.Update.de_json(request.stream.read().decode('utf-8'))
     bot.process_new_updates([update])
     return 'ok', 200
-
-@bot.message_handler(commands=['insta'])
-def insta(m):
-    if m.date < initial_unix_date:
-        return 'old message'
-
-    if not correct_chat(m.chat.id):
-        bot.reply_to(m, config.wrong_chat_txt)
-        return 'not the right chat'
-
-    try:
-        username = m.text.split(' ')[1]
-    except:
-        bot.reply_to(m, config.empty_txt)
-        return 'no'
-
-    url = 'https://www.instagram.com/' + username
-
-    res = requests.get(url)
-
-    soup = BeautifulSoup(res.text, 'html.parser')
-
-    title = soup.title.text.split('•')[0]
-
-    title = title.strip()
-
-    if title == 'Page Not Found':
-        bot.reply_to(m, 'kullanici adi musait')
-    else:
-        bot.reply_to(m, title + ' tarafindan kullaniliyor')
 
 @bot.message_handler(commands=['start'])
 def start(m):
