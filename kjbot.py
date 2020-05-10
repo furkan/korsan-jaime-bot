@@ -208,6 +208,9 @@ def paid(m):
 
     amount_flt = check_payment(m)
 
+    if amount_flt == 'no':
+        return
+
     if amount_flt == 0:
         bot.reply_to(m, config.zero_txt)
         return
