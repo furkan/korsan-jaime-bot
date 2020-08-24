@@ -71,6 +71,7 @@ def check_payment(m):
 def find_payee(m,paidfrom):
     try:
         paidto_nickname = m.text.split(' ')[2]
+        paidto = 0
         if paidfrom == config.user1_id:
             if paidto_nickname in config.user2_nicknames:
                 paidto = config.user2_id
