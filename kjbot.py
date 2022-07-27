@@ -1,8 +1,9 @@
-from flask import Flask, request
-import telebot
 import config
 import logging
 import time
+
+from flask import Flask, request
+import telebot
 
 TOKEN = config.token
 secret = config.secret
