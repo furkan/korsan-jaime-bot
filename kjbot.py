@@ -1,4 +1,4 @@
-import config
+import ast
 import json
 import logging
 import time
@@ -6,6 +6,8 @@ from pathlib import Path
 
 from flask import Flask, request
 import telebot
+
+import config
 
 BALANCE_FILE = Path('balance.txt')
 ITEM_FILE = Path('items.json')
@@ -44,6 +46,18 @@ def check_time_and_chat(m) -> bool:
     return True
 
 
+def expr(code, context=None):
+    """Eval a math expression and return the result"""
+    if not context:
+        context = {}
+    code = code.format(**context)
+
+    expr = ast.parse(code, mode='eval')
+    code_object = compile(expr, '<string>', 'eval')
+
+    return eval(code_object)
+
+
 def display_status(m, balance_before=['', '', '']):
     with open(BALANCE_FILE) as file:
         balance = file.read().split(',')
@@ -70,7 +84,7 @@ def check_payment(m):
         return 'no'
 
     try:
-        amount_flt = float(amount)
+        amount_flt = float(expr(amount))
     except Exception:
         bot.reply_to(m, config.not_a_number_txt)
         return 'no'
