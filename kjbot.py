@@ -9,9 +9,9 @@ secret = config.secret
 url = config.URL + secret
 
 users = {
-    config.user1_id:0,
-    config.user2_id:1,
-    config.user3_id:2
+    config.user1_id: 0,
+    config.user2_id: 1,
+    config.user3_id: 2
 }
 
 initial_unix_date = time.time()
@@ -26,28 +26,31 @@ bot.set_webhook(url=url)
 
 app = Flask(__name__)
 
+
 def correct_chat(chat_id):
     if chat_id == config.chat_id:
         return True
     else:
         return False
 
-def display_status(m, balance_before = ['', '', '']):
+
+def display_status(m, balance_before=['', '', '']):
     with open('/home/kjbot/korsan-jaime-bot/balance.txt') as file:
         balance = file.read().split(',')
 
-    if balance_before != ['','','']:
+    if balance_before != ['', '', '']:
         balance_before_strings = ['*  <--  *' + str("%.2f" % float(balance_before[0])), '*  <--  *' + str("%.2f" % float(balance_before[1])), '*  <--  *' + str("%.2f" % float(balance_before[2]))]
     else:
-        balance_before_strings = ['','','']
+        balance_before_strings = ['', '', '']
 
-    msg  =  '*'+ config.user1_name + ':*\n' + str("%.2f" % float(balance[0])) + balance_before_strings[0] \
-        + '\n*'+ config.user2_name + ': *\n' + str("%.2f" % float(balance[1])) + balance_before_strings[1] \
-        + '\n*'+ config.user3_name + ':*\n' + str("%.2f" % float(balance[2])) + balance_before_strings[2]
+    msg = '*' + config.user1_name + ':*\n' + str("%.2f" % float(balance[0])) + balance_before_strings[0] \
+              + '\n*' + config.user2_name + ': *\n' + str("%.2f" % float(balance[1])) + balance_before_strings[1] \
+              + '\n*' + config.user3_name + ':*\n' + str("%.2f" % float(balance[2])) + balance_before_strings[2]
     try:
         bot.reply_to(m, msg, parse_mode='Markdown')
-    except:
+    except Exception:
         bot.send_message(config.chat_id, msg, parse_mode='Markdown')
+
 
 def check_payment(m):
     if correct_chat(m.chat.id) is False:
@@ -56,19 +59,20 @@ def check_payment(m):
 
     try:
         amount = m.text.split(' ')[1]
-    except:
+    except Exception:
         bot.reply_to(m, config.empty_txt)
         return 'no'
 
     try:
         amount_flt = float(amount)
-    except:
+    except Exception:
         bot.reply_to(m, config.not_a_number_txt)
         return 'no'
 
     return amount_flt
 
-def find_payee(m,paidfrom):
+
+def find_payee(m, paidfrom):
     try:
         paidto_nickname = m.text.split(' ')[2]
         paidto = 0
@@ -87,11 +91,12 @@ def find_payee(m,paidfrom):
                 paidto = config.user1_id
             if paidto_nickname in config.user2_nicknames:
                 paidto = config.user2_id
-    except:
+    except Exception:
         bot.reply_to(m, config.paid_to_whom_text)
         return 0
 
     return paidto
+
 
 def edit_balances(m, amount_flt, info):
 
@@ -100,7 +105,7 @@ def edit_balances(m, amount_flt, info):
 
     balance_before = balance
 
-    balance_num = [0,0,0]
+    balance_num = [0, 0, 0]
 
     for i in range(len(balance_num)):
         balance_num[i] = float(balance[i])
@@ -110,13 +115,13 @@ def edit_balances(m, amount_flt, info):
             if i == users[str(m.from_user.id)]:
                 try:
                     balance_num[i] += (number_of_people - 1.0) * amount_flt / number_of_people
-                except:
+                except Exception:
                     bot.reply_to(m, 'Nope')
                     return 0
             else:
                 try:
                     balance_num[i] -= amount_flt / number_of_people
-                except:
+                except Exception:
                     bot.reply_to(m, 'Nope')
                     return 0
 
@@ -124,7 +129,7 @@ def edit_balances(m, amount_flt, info):
         try:
             balance_num[users[info[1]]] += amount_flt
             balance_num[users[info[2]]] -= amount_flt
-        except:
+        except Exception:
             bot.reply_to(m, 'Nope')
             return 0
 
@@ -138,11 +143,13 @@ def edit_balances(m, amount_flt, info):
 
     return balance_before
 
-@app.route('/'+secret, methods=['POST'])
+
+@app.route('/' + secret, methods=['POST'])
 def webhook():
     update = telebot.types.Update.de_json(request.stream.read().decode('utf-8'))
     bot.process_new_updates([update])
     return 'ok', 200
+
 
 @bot.message_handler(commands=['start'])
 def start(m):
@@ -155,6 +162,7 @@ def start(m):
 
     bot.reply_to(m, 'Hi!')
 
+
 @bot.message_handler(commands=['help'])
 def help(m):
     if m.date < initial_unix_date:
@@ -165,6 +173,7 @@ def help(m):
         return 'not the right chat'
 
     bot.reply_to(m, config.help_txt, parse_mode='Markdown')
+
 
 @bot.message_handler(commands=['spent'])
 def spent(m):
@@ -186,7 +195,7 @@ def spent(m):
 
     info = ['spent']
 
-    balance_before = edit_balances(m,amount_flt,info)
+    balance_before = edit_balances(m, amount_flt, info)
     if balance_before == 0:
         return
 
@@ -197,6 +206,7 @@ def spent(m):
     bot.send_message(config.user2_id, m.text[7:], parse_mode='Markdown')
 
     bot.send_message(config.user3_id, m.text[7:], parse_mode='Markdown')
+
 
 @bot.message_handler(commands=['paid'])
 def paid(m):
@@ -219,17 +229,18 @@ def paid(m):
     paidfrom = m.from_user.id
     paidfrom = str(paidfrom)
 
-    paidto = find_payee(m,paidfrom)
+    paidto = find_payee(m, paidfrom)
     if paidto == 0:
         return
 
-    info = ['paid',paidfrom,paidto]
+    info = ['paid', paidfrom, paidto]
 
-    balance_before = edit_balances(m,amount_flt,info)
+    balance_before = edit_balances(m, amount_flt, info)
     if balance_before == 0:
         return
 
     display_status(m, balance_before)
+
 
 @bot.message_handler(commands=['status'])
 def status(m):
