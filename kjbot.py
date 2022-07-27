@@ -1,4 +1,5 @@
 import config
+import json
 import logging
 import time
 from pathlib import Path
@@ -7,10 +8,11 @@ from flask import Flask, request
 import telebot
 
 BALANCE_FILE = Path('balance.txt')
+ITEM_FILE = Path('items.json')
 
 TOKEN = config.token
-secret = config.secret
-url = config.URL + secret
+SECRET = config.SECRET
+URL = config.URL + SECRET
 
 users = {
     config.user1_id: 0,
@@ -18,24 +20,28 @@ users = {
     config.user3_id: 2
 }
 
-initial_unix_date = time.time()
-number_of_people = 3.0
+INITIAL_UNIX_TIME = time.time()
+NUMBER_OF_PEOPLE = 3.0
 
 logger = telebot.logger
 telebot.logger.setLevel(logging.DEBUG)
 
 bot = telebot.TeleBot(TOKEN, threaded=False)
 bot.remove_webhook()
-bot.set_webhook(url=url)
+bot.set_webhook(url=URL)
 
 app = Flask(__name__)
 
 
-def correct_chat(chat_id):
-    if chat_id == config.chat_id:
-        return True
-    else:
+def check_time_and_chat(m) -> bool:
+    if m.date < INITIAL_UNIX_TIME:
         return False
+
+    if m.chat.id != config.chat_id:
+        bot.reply_to(m, config.wrong_chat_txt)
+        return False
+
+    return True
 
 
 def display_status(m, balance_before=['', '', '']):
@@ -57,10 +63,6 @@ def display_status(m, balance_before=['', '', '']):
 
 
 def check_payment(m):
-    if correct_chat(m.chat.id) is False:
-        bot.reply_to(m, config.wrong_chat_txt)
-        return 'no'
-
     try:
         amount = m.text.split(' ')[1]
     except Exception:
@@ -103,7 +105,6 @@ def find_payee(m, paidfrom):
 
 
 def edit_balances(m, amount_flt, info):
-
     with open(BALANCE_FILE) as file:
         balance = file.read().split(',')
 
@@ -118,13 +119,13 @@ def edit_balances(m, amount_flt, info):
         for i in range(len(balance_num)):
             if i == users[str(m.from_user.id)]:
                 try:
-                    balance_num[i] += (number_of_people - 1.0) * amount_flt / number_of_people
+                    balance_num[i] += (NUMBER_OF_PEOPLE - 1.0) * amount_flt / NUMBER_OF_PEOPLE
                 except Exception:
                     bot.reply_to(m, 'Nope')
                     return 0
             else:
                 try:
-                    balance_num[i] -= amount_flt / number_of_people
+                    balance_num[i] -= amount_flt / NUMBER_OF_PEOPLE
                 except Exception:
                     bot.reply_to(m, 'Nope')
                     return 0
@@ -148,7 +149,7 @@ def edit_balances(m, amount_flt, info):
     return balance_before
 
 
-@app.route('/' + secret, methods=['POST'])
+@app.route('/' + SECRET, methods=['POST'])
 def webhook():
     update = telebot.types.Update.de_json(request.stream.read().decode('utf-8'))
     bot.process_new_updates([update])
@@ -157,36 +158,24 @@ def webhook():
 
 @bot.message_handler(commands=['start'])
 def start(m):
-    if m.date < initial_unix_date:
-        return 'old message'
-
-    if not correct_chat(m.chat.id):
-        bot.reply_to(m, config.wrong_chat_txt)
-        return 'not the right chat'
+    if not check_time_and_chat(m):
+        return
 
     bot.reply_to(m, 'Hi!')
 
 
 @bot.message_handler(commands=['help'])
 def help(m):
-    if m.date < initial_unix_date:
-        return 'old message'
-
-    if not correct_chat(m.chat.id):
-        bot.reply_to(m, config.wrong_chat_txt)
-        return 'not the right chat'
+    if not check_time_and_chat(m):
+        return
 
     bot.reply_to(m, config.help_txt, parse_mode='Markdown')
 
 
 @bot.message_handler(commands=['spent'])
 def spent(m):
-    if m.date < initial_unix_date:
-        return 'old message'
-
-    if not correct_chat(m.chat.id):
-        bot.reply_to(m, config.wrong_chat_txt)
-        return 'not the right chat'
+    if not check_time_and_chat(m):
+        return
 
     amount_flt = check_payment(m)
 
@@ -214,12 +203,8 @@ def spent(m):
 
 @bot.message_handler(commands=['paid'])
 def paid(m):
-    if m.date < initial_unix_date:
-        return 'old message'
-
-    if not correct_chat(m.chat.id):
-        bot.reply_to(m, config.wrong_chat_txt)
-        return 'not the right chat'
+    if not check_time_and_chat(m):
+        return
 
     amount_flt = check_payment(m)
 
@@ -248,11 +233,77 @@ def paid(m):
 
 @bot.message_handler(commands=['status'])
 def status(m):
-    if m.date < initial_unix_date:
-        return 'old message'
-
-    if not correct_chat(m.chat.id):
-        bot.reply_to(m, config.wrong_chat_txt)
-        return 'not the right chat'
+    if not check_time_and_chat(m):
+        return
 
     display_status(m)
+
+
+@bot.message_handler(commands=['add'])
+def add(m):
+    if not check_time_and_chat(m):
+        return
+
+    with open(ITEM_FILE, 'r', encoding='utf-8') as f:
+        items = json.load(f)
+        try:
+            item = m.text[5:]
+        except Exception:
+            bot.reply_to(m, 'What do we need son? :D')
+            return 0
+        items.append(item)
+
+    with open(ITEM_FILE, 'w', encoding='utf-8') as f:
+        json.dump(items, f, ensure_ascii=False, indent=4)
+
+    if len(items) != 0:
+        msg = ''
+        for index, item in enumerate(items):
+            msg = msg + '*' + str(index) + ': *' + item + '\n'
+    else:
+        msg = 'No items'
+
+    bot.reply_to(m, msg, parse_mode='Markdown')
+
+
+@bot.message_handler(commands=['remove'])
+def remove(m):
+    if not check_time_and_chat(m):
+        return
+
+    with open(ITEM_FILE, 'r', encoding='utf-8') as f:
+        items = json.load(f)
+        try:
+            index = m.text.split(' ')[1]
+            item = items.pop(int(index))
+        except Exception:
+            bot.reply_to(m, 'Give me an appropriate index, will you?')
+            return 0
+
+    with open(ITEM_FILE, 'w', encoding='utf-8') as f:
+        json.dump(items, f, ensure_ascii=False, indent=4)
+
+    msg = '*' + item + '*' + ' is removed! \n\n'
+
+    for index, item in enumerate(items):
+        msg = msg + '*' + str(index) + ': *' + item + '\n'
+
+    bot.reply_to(m, msg, parse_mode='Markdown')
+
+
+@bot.message_handler(commands=['list'])
+def list(m):
+    if not check_time_and_chat(m):
+        return
+
+    with open(ITEM_FILE, 'r', encoding='utf-8') as f:
+        items = json.load(f)
+
+    if len(items) != 0:
+        msg = ''
+        for index, item in enumerate(items):
+            msg = msg + '*' + str(index) + ': *' + item + '\n'
+    else:
+        msg = 'No items'
+
+    bot.reply_to(m, msg, parse_mode='Markdown')
