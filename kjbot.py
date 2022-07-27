@@ -1,9 +1,12 @@
 import config
 import logging
 import time
+from pathlib import Path
 
 from flask import Flask, request
 import telebot
+
+BALANCE_FILE = Path('balance.txt')
 
 TOKEN = config.token
 secret = config.secret
@@ -36,7 +39,7 @@ def correct_chat(chat_id):
 
 
 def display_status(m, balance_before=['', '', '']):
-    with open('/home/kjbot/korsan-jaime-bot/balance.txt') as file:
+    with open(BALANCE_FILE) as file:
         balance = file.read().split(',')
 
     if balance_before != ['', '', '']:
@@ -101,7 +104,7 @@ def find_payee(m, paidfrom):
 
 def edit_balances(m, amount_flt, info):
 
-    with open('/home/kjbot/korsan-jaime-bot/balance.txt') as file:
+    with open(BALANCE_FILE) as file:
         balance = file.read().split(',')
 
     balance_before = balance
@@ -134,7 +137,7 @@ def edit_balances(m, amount_flt, info):
             bot.reply_to(m, 'Nope')
             return 0
 
-    with open('/home/kjbot/korsan-jaime-bot/balance.txt', 'w') as file:
+    with open(BALANCE_FILE, 'w') as file:
         data = ''
         for i in range(len(balance_num)):
             data += str(balance_num[i]) + ','
