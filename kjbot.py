@@ -1,7 +1,7 @@
 import ast
+from datetime import datetime
 import logging
 from pathlib import Path
-from time import time
 from typing import Union, List, Tuple
 
 import telebot
@@ -12,8 +12,7 @@ import config
 BALANCE_FILE: Path = Path(__file__).parent / 'balance.txt'
 ITEM_FILE: Path = Path(__file__).parent / 'item.json'
 
-INITIAL_UNIX_TIME: float = time()
-
+INITIAL_UNIX_TIME: datetime = datetime.now()
 TOKEN: str = config.token
 SECRET: str = config.SECRET
 URL: str = config.URL + SECRET
