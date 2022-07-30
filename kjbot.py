@@ -2,7 +2,7 @@ import ast
 import logging
 from pathlib import Path
 from time import time
-from typing import Union
+from typing import Union, List
 
 import telebot
 from telebot.types import Message
@@ -55,7 +55,7 @@ def expr(code: str) -> float:
     return float(eval(code_object))
 
 
-def display_status(m: Message, balance_before: list[str] = ['', '', '']) -> None:
+def display_status(m: Message, balance_before: List[str] = ['', '', '']) -> None:
     with open(BALANCE_FILE) as file:
         balance = file.read().split(',')
 
