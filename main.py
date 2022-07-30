@@ -1,4 +1,3 @@
-import json
 import logging
 from pathlib import Path
 
@@ -7,7 +6,7 @@ import telebot
 from telebot.types import Message
 
 import config
-from kjbot import check_time_and_chat, display_status, check_payment, find_payee, edit_balances
+from kjbot import add_item, remove_item, list_items, check_time_and_chat, display_status, check_payment, find_payee, edit_balances
 
 ITEM_FILE = Path(__file__).parent / 'items.json'
 
@@ -23,6 +22,7 @@ logger.setLevel(logging.DEBUG)
 bot: telebot.TeleBot = telebot.TeleBot(TOKEN, threaded=False)
 bot.remove_webhook()
 bot.set_webhook(url=URL)
+
 
 @app.route('/' + SECRET, methods=['POST'])
 def webhook():
@@ -52,31 +52,23 @@ def spent(m: Message):
     if not check_time_and_chat(m):
         return
 
-    amount_flt = check_payment(m)
+    amount_flt, valid_number = check_payment(m.text)
 
-    if amount_flt == 'empty':
-        bot.reply_to(m, config.empty_txt)
-        return
-
-    if amount_flt == 'not_a_number':
-        bot.reply_to(m, config.not_a_number_txt)
-        return
-
-    if amount_flt == 0:
-        bot.reply_to(m, config.zero_txt)
+    if not valid_number:
+        bot.reply_to(m, 'Please provide a valid number')
         return
 
     info = ['spent']
 
-    balance_before = edit_balances(m, amount_flt, info)
-    if balance_before == 0:
+    balance_before, ok = edit_balances(str(m.from_user.id), amount_flt, info)
+    if not ok:
         return
 
-    msg = display_status(m, balance_before)
+    msg = display_status(balance_before)
 
     try:
         bot.reply_to(m, msg, parse_mode='Markdown')
-    except:
+    except Exception:
         bot.send_message(config.chat_id, msg, parse_mode='Markdown')
 
     bot.send_message(config.user1_id, m.text[7:], parse_mode='Markdown')
@@ -91,39 +83,31 @@ def paid(m: Message):
     if not check_time_and_chat(m):
         return
 
-    amount_flt = check_payment(m)
+    amount_flt, valid_number = check_payment(m.text)
 
-    if amount_flt == 'empty':
-        bot.reply_to(m, config.empty_txt)
-        return
-
-    if amount_flt == 'not_a_number':
-        bot.reply_to(m, config.not_a_number_txt)
-        return
-
-    if amount_flt == 0:
-        bot.reply_to(m, config.zero_txt)
+    if not valid_number:
+        bot.reply_to(m, 'Please provide a valid number')
         return
 
     paidfrom = m.from_user.id
     paidfrom = str(paidfrom)
 
-    paidto = find_payee(m, paidfrom)
-    if paidto == 0:
+    paidto = find_payee(paidfrom)
+    if paidto == '':
         bot.reply_to(m, config.paid_to_whom_text)
         return
 
     info = ['paid', paidfrom, paidto]
 
-    balance_before = edit_balances(m, amount_flt, info)
-    if balance_before == 0:
+    balance_before, ok = edit_balances(str(m.from_user.id), amount_flt, info)
+    if not ok:
         return
 
-    msg = display_status(m, balance_before)
+    msg = display_status(balance_before)
 
     try:
         bot.reply_to(m, msg, parse_mode='Markdown')
-    except:
+    except Exception:
         bot.send_message(config.chat_id, msg, parse_mode='Markdown')
 
 
@@ -132,11 +116,11 @@ def status(m: Message):
     if not check_time_and_chat(m):
         return
 
-    msg = display_status(m)
+    msg = display_status()
 
     try:
         bot.reply_to(m, msg, parse_mode='Markdown')
-    except:
+    except Exception:
         bot.send_message(config.chat_id, msg, parse_mode='Markdown')
 
 
@@ -145,24 +129,13 @@ def add(m: Message):
     if not check_time_and_chat(m):
         return
 
-    with open(ITEM_FILE, 'r', encoding='utf-8') as f:
-        items = json.load(f)
-        try:
-            item = m.text[5:]
-        except Exception:
-            bot.reply_to(m, 'What do we need son? :D')
-            return 0
-        items.append(item)
+    try:
+        item: str = m.text[5:]
+    except Exception:
+        bot.reply_to(m, 'What do we need son? :D')
+        return
 
-    with open(ITEM_FILE, 'w', encoding='utf-8') as f:
-        json.dump(items, f, ensure_ascii=False, indent=4)
-
-    if len(items) != 0:
-        msg = ''
-        for index, item in enumerate(items):
-            msg = msg + '*' + str(index) + ': *' + item + '\n'
-    else:
-        msg = 'No items'
+    msg = add_item(item)
 
     bot.reply_to(m, msg, parse_mode='Markdown')
 
@@ -172,22 +145,13 @@ def remove(m: Message):
     if not check_time_and_chat(m):
         return
 
-    with open(ITEM_FILE, 'r', encoding='utf-8') as f:
-        items = json.load(f)
-        try:
-            index = m.text.split(' ')[1]
-            item = items.pop(int(index))
-        except Exception:
-            bot.reply_to(m, 'Give me an appropriate index, will you?')
-            return 0
+    try:
+        index = int(m.text.split(' ')[1])
+    except Exception:
+        bot.reply_to(m, 'Try an appropriate index.')
+        return
 
-    with open(ITEM_FILE, 'w', encoding='utf-8') as f:
-        json.dump(items, f, ensure_ascii=False, indent=4)
-
-    msg = '*' + item + '*' + ' is removed! \n\n'
-
-    for index, item in enumerate(items):
-        msg = msg + '*' + str(index) + ': *' + item + '\n'
+    msg = remove_item(index)
 
     bot.reply_to(m, msg, parse_mode='Markdown')
 
@@ -197,14 +161,6 @@ def list(m: Message):
     if not check_time_and_chat(m):
         return
 
-    with open(ITEM_FILE, 'r', encoding='utf-8') as f:
-        items = json.load(f)
-
-    if len(items) != 0:
-        msg = ''
-        for index, item in enumerate(items):
-            msg = msg + '*' + str(index) + ': *' + item + '\n'
-    else:
-        msg = 'No items'
+    msg = list_items()
 
     bot.reply_to(m, msg, parse_mode='Markdown')
