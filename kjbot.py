@@ -9,7 +9,7 @@ from telebot.types import Message
 import config
 
 BALANCE_FILE: Path = Path(__file__).parent / 'balance.txt'
-ITEM_FILE: Path = Path(__file__).parent / 'item.json'
+ITEM_FILE: Path = Path(__file__).parent / 'items.json'
 
 INITIAL_UNIX_TIME: float = time()
 

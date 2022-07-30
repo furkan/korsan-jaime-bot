@@ -8,8 +8,6 @@ from telebot.types import Message
 import config
 from kjbot import add_item, remove_item, list_items, check_time_and_chat, display_status, check_payment, find_payee, edit_balances
 
-ITEM_FILE = Path(__file__).parent / 'items.json'
-
 app = Flask(__name__)
 
 TOKEN: str = config.token
