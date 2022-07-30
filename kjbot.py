@@ -1,10 +1,8 @@
 import ast
-import logging
 from pathlib import Path
 from time import time
 from typing import Union, List, Tuple
 
-import telebot
 from telebot.types import Message
 
 import config
@@ -19,13 +17,6 @@ SECRET: str = config.SECRET
 URL: str = config.URL + SECRET
 
 NUMBER_OF_PEOPLE: int = 3
-
-logger: logging.Logger = telebot.logger
-logger.setLevel(logging.DEBUG)
-
-bot: telebot.TeleBot = telebot.TeleBot(TOKEN, threaded=False)
-bot.remove_webhook()
-bot.set_webhook(url=URL)
 
 users: dict = {
     config.user1_id: 0,
@@ -52,7 +43,7 @@ def expr(code: str) -> float:
     return float(eval(code_object))
 
 
-def display_status(m: Message, balance_before: List[str] = ['', '', '']) -> None:
+def display_status(m: Message, balance_before: List[str] = ['', '', '']) -> str:
     with open(BALANCE_FILE) as file:
         balance = file.read().split(',')
 
@@ -64,24 +55,19 @@ def display_status(m: Message, balance_before: List[str] = ['', '', '']) -> None
     msg = '*' + config.user1_name + ':*\n' + str("%.2f" % float(balance[0])) + balance_before_strings[0] \
               + '\n*' + config.user2_name + ': *\n' + str("%.2f" % float(balance[1])) + balance_before_strings[1] \
               + '\n*' + config.user3_name + ':*\n' + str("%.2f" % float(balance[2])) + balance_before_strings[2]
-    try:
-        bot.reply_to(m, msg, parse_mode='Markdown')
-    except Exception:
-        bot.send_message(config.chat_id, msg, parse_mode='Markdown')
+    return msg
 
 
 def check_payment(m: Message) -> Union[str, float]:
     try:
         amount = m.text.split(' ')[1]
     except Exception:
-        bot.reply_to(m, config.empty_txt)
-        return 'no'
+        return 'empty'
 
     try:
         amount_flt = expr(amount)
     except Exception:
-        bot.reply_to(m, config.not_a_number_txt)
-        return 'no'
+        return 'not_a_number'
 
     return amount_flt
 
@@ -106,7 +92,6 @@ def find_payee(m: Message, paidfrom: str) -> Union[str, int]:
             if paidto_nickname in config.user2_nicknames:
                 paidto = config.user2_id
     except Exception:
-        bot.reply_to(m, config.paid_to_whom_text)
         return 0
 
     return paidto
@@ -129,13 +114,11 @@ def edit_balances(m: Message, amount_flt: float, info: List) -> Union[Exception,
                 try:
                     balance_num[i] += (NUMBER_OF_PEOPLE - 1.0) * amount_flt / NUMBER_OF_PEOPLE
                 except Exception as e:
-                    bot.reply_to(m, 'Nope')
                     raise e
             else:
                 try:
                     balance_num[i] -= amount_flt / NUMBER_OF_PEOPLE
                 except Exception as e:
-                    bot.reply_to(m, 'Nope')
                     return e
 
     elif info[0] == 'paid':
@@ -143,7 +126,6 @@ def edit_balances(m: Message, amount_flt: float, info: List) -> Union[Exception,
             balance_num[users[info[1]]] += amount_flt
             balance_num[users[info[2]]] -= amount_flt
         except Exception as e:
-            bot.reply_to(m, 'Nope')
             return e
 
     with open(BALANCE_FILE, 'w') as file:
