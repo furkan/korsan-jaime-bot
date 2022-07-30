@@ -36,6 +36,7 @@ users: dict = {
 
 def check_time_and_chat(m: Message) -> bool:
     new_message =  m.date > INITIAL_UNIX_TIME
+    print(f'{m.date=}, {INITIAL_UNIX_TIME=}')
     if not new_message:
         raise Exception(f'{m} is an old message')
     correct_chat = m.chat.id == config.chat_id
