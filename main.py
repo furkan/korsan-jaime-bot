@@ -1,4 +1,5 @@
 import json
+import logging
 from pathlib import Path
 
 from flask import Flask, request
@@ -6,12 +7,22 @@ import telebot
 from telebot.types import Message
 
 import config
-from kjbot import bot, SECRET, check_time_and_chat, display_status, check_payment, find_payee, edit_balances
+from kjbot import check_time_and_chat, display_status, check_payment, find_payee, edit_balances
 
 ITEM_FILE = Path(__file__).parent / 'items.json'
 
 app = Flask(__name__)
 
+TOKEN: str = config.token
+SECRET: str = config.SECRET
+URL: str = config.URL + SECRET
+
+logger: logging.Logger = telebot.logger
+logger.setLevel(logging.DEBUG)
+
+bot: telebot.TeleBot = telebot.TeleBot(TOKEN, threaded=False)
+bot.remove_webhook()
+bot.set_webhook(url=URL)
 
 @app.route('/' + SECRET, methods=['POST'])
 def webhook():
@@ -46,7 +57,12 @@ def spent(m: Message):
 
     amount_flt = check_payment(m)
 
-    if amount_flt == 'no':
+    if amount_flt == 'empty':
+        bot.reply_to(m, config.empty_txt)
+        return
+
+    if amount_flt == 'not_a_number':
+        bot.reply_to(m, config.not_a_number_txt)
         return
 
     if amount_flt == 0:
@@ -59,7 +75,12 @@ def spent(m: Message):
     if balance_before == 0:
         return
 
-    display_status(m, balance_before)
+    msg = display_status(m, balance_before)
+
+    try:
+        bot.reply_to(m, msg, parse_mode='Markdown')
+    except:
+        bot.send_message(config.chat_id, msg, parse_mode='Markdown')
 
     bot.send_message(config.user1_id, m.text[7:], parse_mode='Markdown')
 
@@ -76,7 +97,12 @@ def paid(m: Message):
 
     amount_flt = check_payment(m)
 
-    if amount_flt == 'no':
+    if amount_flt == 'empty':
+        bot.reply_to(m, config.empty_txt)
+        return
+
+    if amount_flt == 'not_a_number':
+        bot.reply_to(m, config.not_a_number_txt)
         return
 
     if amount_flt == 0:
@@ -88,6 +114,7 @@ def paid(m: Message):
 
     paidto = find_payee(m, paidfrom)
     if paidto == 0:
+        bot.reply_to(m, config.paid_to_whom_text)
         return
 
     info = ['paid', paidfrom, paidto]
