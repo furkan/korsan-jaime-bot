@@ -23,7 +23,7 @@ NUMBER_OF_PEOPLE: int = 3
 logger: logging.Logger = telebot.logger
 logger.setLevel(logging.DEBUG)
 
-bot: telebot.Telebot = telebot.TeleBot(TOKEN, threaded=False)
+bot: telebot.TeleBot = telebot.TeleBot(TOKEN, threaded=False)
 bot.remove_webhook()
 bot.set_webhook(url=URL)
 
