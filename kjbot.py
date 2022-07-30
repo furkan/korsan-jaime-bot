@@ -115,7 +115,7 @@ def find_payee(m: Message, paidfrom: str) -> Union[str, int]:
     return paidto
 
 
-def edit_balances(m: Message, amount_flt: float, info: list) -> Union[int, list[str]]:
+def edit_balances(m: Message, amount_flt: float, info: List) -> Union[int, List[str]]:
     with open(BALANCE_FILE) as file:
         balance = file.read().split(',')
 
