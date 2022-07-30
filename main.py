@@ -123,7 +123,12 @@ def paid(m: Message):
     if balance_before == 0:
         return
 
-    display_status(m, balance_before)
+    msg = display_status(m, balance_before)
+
+    try:
+        bot.reply_to(m, msg, parse_mode='Markdown')
+    except:
+        bot.send_message(config.chat_id, msg, parse_mode='Markdown')
 
 
 @bot.message_handler(commands=['status'])
@@ -132,7 +137,12 @@ def status(m: Message):
         bot.reply_to(m, 'Not the right chat!')
         return
 
-    display_status(m)
+    msg = display_status(m)
+
+    try:
+        bot.reply_to(m, msg, parse_mode='Markdown')
+    except:
+        bot.send_message(config.chat_id, msg, parse_mode='Markdown')
 
 
 @bot.message_handler(commands=['add'])
