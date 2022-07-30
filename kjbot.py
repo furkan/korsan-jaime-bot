@@ -1,7 +1,7 @@
 import ast
-from datetime import datetime
 import logging
 from pathlib import Path
+from time import time
 from typing import Union, List, Tuple
 
 import telebot
@@ -12,7 +12,8 @@ import config
 BALANCE_FILE: Path = Path(__file__).parent / 'balance.txt'
 ITEM_FILE: Path = Path(__file__).parent / 'item.json'
 
-INITIAL_UNIX_TIME: datetime = datetime.now()
+INITIAL_UNIX_TIME: float = time()
+
 TOKEN: str = config.token
 SECRET: str = config.SECRET
 URL: str = config.URL + SECRET
@@ -35,7 +36,7 @@ users: dict = {
 
 def check_time_and_chat(m: Message) -> bool:
     new_message =  m.date > INITIAL_UNIX_TIME
-    print(f'message time:{m.date}, initial time:{INITIAL_UNIX_TIME}')
+    print(f'message time:{m.date}, initial time:{INITIAL_UNIX_TIME=}')
     if not new_message:
         raise Exception(f'{m} is an old message')
     correct_chat = m.chat.id == config.chat_id
