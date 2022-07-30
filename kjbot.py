@@ -2,7 +2,7 @@ import ast
 import logging
 from pathlib import Path
 from time import time
-from typing import Union, List
+from typing import Union, List, Tuple
 
 import telebot
 from telebot.types import Message
@@ -35,18 +35,15 @@ users: dict = {
 
 
 def check_time_and_chat(m: Message) -> bool:
-    if m.date < INITIAL_UNIX_TIME:
-        return False
-
-    if m.chat.id != config.chat_id:
-        bot.reply_to(m, config.wrong_chat_txt)
-        return False
-
-    return True
+    new_message =  m.date < INITIAL_UNIX_TIME
+    if not new_message:
+        raise Exception(f'{m} is an old message')
+    correct_chat = m.chat.id == config.chat_id
+    return correct_chat
 
 
 def expr(code: str) -> float:
-    """Eval a math expression and return the result"""
+    '''Eval a math expression and return the result'''
     code = code.format(**{})
 
     expr = ast.parse(code, mode='eval')
@@ -115,7 +112,7 @@ def find_payee(m: Message, paidfrom: str) -> Union[str, int]:
     return paidto
 
 
-def edit_balances(m: Message, amount_flt: float, info: List) -> Union[int, List[str]]:
+def edit_balances(m: Message, amount_flt: float, info: List) -> Union[Exception, List[str]]:
     with open(BALANCE_FILE) as file:
         balance = file.read().split(',')
 
@@ -131,23 +128,23 @@ def edit_balances(m: Message, amount_flt: float, info: List) -> Union[int, List[
             if i == users[str(m.from_user.id)]:
                 try:
                     balance_num[i] += (NUMBER_OF_PEOPLE - 1.0) * amount_flt / NUMBER_OF_PEOPLE
-                except Exception:
+                except Exception as e:
                     bot.reply_to(m, 'Nope')
-                    return 0
+                    raise e
             else:
                 try:
                     balance_num[i] -= amount_flt / NUMBER_OF_PEOPLE
-                except Exception:
+                except Exception as e:
                     bot.reply_to(m, 'Nope')
-                    return 0
+                    return e
 
     elif info[0] == 'paid':
         try:
             balance_num[users[info[1]]] += amount_flt
             balance_num[users[info[2]]] -= amount_flt
-        except Exception:
+        except Exception as e:
             bot.reply_to(m, 'Nope')
-            return 0
+            return e
 
     with open(BALANCE_FILE, 'w') as file:
         data = ''
