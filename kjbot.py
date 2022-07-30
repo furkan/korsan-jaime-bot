@@ -7,8 +7,8 @@ import telebot
 
 import config
 
-BALANCE_FILE = Path('balance.txt')
-ITEM_FILE = Path('items.json')
+BALANCE_FILE = Path(__file__).parent / 'balance.txt'
+ITEM_FILE = Path(__file__).parent / 'items.json'
 
 INITIAL_UNIX_TIME = time()
 
