@@ -2,37 +2,39 @@ import ast
 import logging
 from pathlib import Path
 from time import time
+from typing import Union
 
 import telebot
+from telebot.types import Message
 
 import config
 
-BALANCE_FILE = Path(__file__).parent / 'balance.txt'
-ITEM_FILE = Path(__file__).parent / 'items.json'
+BALANCE_FILE: Path = Path(__file__).parent / 'balance.txt'
+ITEM_FILE: Path = Path(__file__).parent / 'item.json'
 
-INITIAL_UNIX_TIME = time()
+INITIAL_UNIX_TIME: float = time()
 
-TOKEN = config.token
-SECRET = config.SECRET
-URL = config.URL + SECRET
+TOKEN: str = config.token
+SECRET: str = config.SECRET
+URL: str = config.URL + SECRET
 
-NUMBER_OF_PEOPLE = 3.0
+NUMBER_OF_PEOPLE: int = 3
 
-logger = telebot.logger
-telebot.logger.setLevel(logging.DEBUG)
+logger: logging.Logger = telebot.logger
+logger.setLevel(logging.DEBUG)
 
-bot = telebot.TeleBot(TOKEN, threaded=False)
+bot: telebot.Telebot = telebot.TeleBot(TOKEN, threaded=False)
 bot.remove_webhook()
 bot.set_webhook(url=URL)
 
-users = {
+users: dict = {
     config.user1_id: 0,
     config.user2_id: 1,
     config.user3_id: 2
 }
 
 
-def check_time_and_chat(m) -> bool:
+def check_time_and_chat(m: Message) -> bool:
     if m.date < INITIAL_UNIX_TIME:
         return False
 
@@ -43,19 +45,17 @@ def check_time_and_chat(m) -> bool:
     return True
 
 
-def expr(code, context=None):
+def expr(code: str) -> float:
     """Eval a math expression and return the result"""
-    if not context:
-        context = {}
-    code = code.format(**context)
+    code = code.format(**{})
 
     expr = ast.parse(code, mode='eval')
     code_object = compile(expr, '<string>', 'eval')
 
-    return eval(code_object)
+    return float(eval(code_object))
 
 
-def display_status(m, balance_before=['', '', '']):
+def display_status(m: Message, balance_before: list[str] = ['', '', '']) -> None:
     with open(BALANCE_FILE) as file:
         balance = file.read().split(',')
 
@@ -73,7 +73,7 @@ def display_status(m, balance_before=['', '', '']):
         bot.send_message(config.chat_id, msg, parse_mode='Markdown')
 
 
-def check_payment(m):
+def check_payment(m: Message) -> Union[str, float]:
     try:
         amount = m.text.split(' ')[1]
     except Exception:
@@ -81,7 +81,7 @@ def check_payment(m):
         return 'no'
 
     try:
-        amount_flt = float(expr(amount))
+        amount_flt = expr(amount)
     except Exception:
         bot.reply_to(m, config.not_a_number_txt)
         return 'no'
@@ -89,10 +89,10 @@ def check_payment(m):
     return amount_flt
 
 
-def find_payee(m, paidfrom):
+def find_payee(m: Message, paidfrom: str) -> Union[str, int]:
     try:
         paidto_nickname = m.text.split(' ')[2]
-        paidto = 0
+        paidto = ''
         if paidfrom == config.user1_id:
             if paidto_nickname in config.user2_nicknames:
                 paidto = config.user2_id
@@ -115,13 +115,13 @@ def find_payee(m, paidfrom):
     return paidto
 
 
-def edit_balances(m, amount_flt, info):
+def edit_balances(m: Message, amount_flt: float, info: list) -> Union[int, list[str]]:
     with open(BALANCE_FILE) as file:
         balance = file.read().split(',')
 
     balance_before = balance
 
-    balance_num = [0, 0, 0]
+    balance_num = [0.0, 0.0, 0.0]
 
     for i in range(len(balance_num)):
         balance_num[i] = float(balance[i])

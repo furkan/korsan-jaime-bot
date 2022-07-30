@@ -3,6 +3,7 @@ from pathlib import Path
 
 from flask import Flask, request
 import telebot
+from telebot.types import Message
 
 import config
 from kjbot import bot, SECRET, check_time_and_chat, display_status, check_payment, find_payee, edit_balances
@@ -20,7 +21,7 @@ def webhook():
 
 
 @bot.message_handler(commands=['start'])
-def start(m):
+def start(m: Message):
     if not check_time_and_chat(m):
         return
 
@@ -28,7 +29,7 @@ def start(m):
 
 
 @bot.message_handler(commands=['help'])
-def help(m):
+def help(m: Message):
     if not check_time_and_chat(m):
         return
 
@@ -36,7 +37,7 @@ def help(m):
 
 
 @bot.message_handler(commands=['spent'])
-def spent(m):
+def spent(m: Message):
     if not check_time_and_chat(m):
         return
 
@@ -65,7 +66,7 @@ def spent(m):
 
 
 @bot.message_handler(commands=['paid'])
-def paid(m):
+def paid(m: Message):
     if not check_time_and_chat(m):
         return
 
@@ -95,7 +96,7 @@ def paid(m):
 
 
 @bot.message_handler(commands=['status'])
-def status(m):
+def status(m: Message):
     if not check_time_and_chat(m):
         return
 
@@ -103,7 +104,7 @@ def status(m):
 
 
 @bot.message_handler(commands=['add'])
-def add(m):
+def add(m: Message):
     if not check_time_and_chat(m):
         return
 
@@ -130,7 +131,7 @@ def add(m):
 
 
 @bot.message_handler(commands=['remove'])
-def remove(m):
+def remove(m: Message):
     if not check_time_and_chat(m):
         return
 
@@ -155,7 +156,7 @@ def remove(m):
 
 
 @bot.message_handler(commands=['list'])
-def list(m):
+def list(m: Message):
     if not check_time_and_chat(m):
         return
 
