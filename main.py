@@ -34,7 +34,6 @@ def webhook():
 @bot.message_handler(commands=['start'])
 def start(m: Message):
     if not check_time_and_chat(m):
-        bot.reply_to(m, 'Not the right chat!')
         return
 
     bot.reply_to(m, 'Hi!')
@@ -43,7 +42,6 @@ def start(m: Message):
 @bot.message_handler(commands=['help'])
 def help(m: Message):
     if not check_time_and_chat(m):
-        bot.reply_to(m, 'Not the right chat!')
         return
 
     bot.reply_to(m, config.help_txt, parse_mode='Markdown')
@@ -52,7 +50,6 @@ def help(m: Message):
 @bot.message_handler(commands=['spent'])
 def spent(m: Message):
     if not check_time_and_chat(m):
-        bot.reply_to(m, 'Not the right chat!')
         return
 
     amount_flt = check_payment(m)
@@ -92,7 +89,6 @@ def spent(m: Message):
 @bot.message_handler(commands=['paid'])
 def paid(m: Message):
     if not check_time_and_chat(m):
-        bot.reply_to(m, 'Not the right chat!')
         return
 
     amount_flt = check_payment(m)
@@ -134,7 +130,6 @@ def paid(m: Message):
 @bot.message_handler(commands=['status'])
 def status(m: Message):
     if not check_time_and_chat(m):
-        bot.reply_to(m, 'Not the right chat!')
         return
 
     msg = display_status(m)
@@ -148,7 +143,6 @@ def status(m: Message):
 @bot.message_handler(commands=['add'])
 def add(m: Message):
     if not check_time_and_chat(m):
-        bot.reply_to(m, 'Not the right chat!')
         return
 
     with open(ITEM_FILE, 'r', encoding='utf-8') as f:
@@ -176,7 +170,6 @@ def add(m: Message):
 @bot.message_handler(commands=['remove'])
 def remove(m: Message):
     if not check_time_and_chat(m):
-        bot.reply_to(m, 'Not the right chat!')
         return
 
     with open(ITEM_FILE, 'r', encoding='utf-8') as f:
@@ -202,7 +195,6 @@ def remove(m: Message):
 @bot.message_handler(commands=['list'])
 def list(m: Message):
     if not check_time_and_chat(m):
-        bot.reply_to(m, 'Not the right chat!')
         return
 
     with open(ITEM_FILE, 'r', encoding='utf-8') as f:
