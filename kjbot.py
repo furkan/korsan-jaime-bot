@@ -58,11 +58,17 @@ def display_status(balance_before: List[str] = ['', '', '']) -> str:
     return msg
 
 
-def check_payment(message: str) -> Tuple[float, bool]:
+def check_payment(message: str, needs_description: bool) -> Tuple[float, bool]:
     try:
         amount = message.split(' ')[1]
     except Exception:
         return 0.0, False
+
+    if needs_description:
+        try:
+            _ = message.split(' ')[2:]
+        except Exception:
+            return 0.0, False
 
     try:
         amount_flt = expr(amount)

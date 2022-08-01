@@ -1,5 +1,4 @@
 import logging
-from pathlib import Path
 
 from flask import Flask, request
 import telebot
@@ -50,7 +49,7 @@ def spent(m: Message):
     if not check_time_and_chat(m):
         return
 
-    amount_flt, valid_number = check_payment(m.text)
+    amount_flt, valid_number = check_payment(m.text, needs_description=True)
 
     if not valid_number:
         bot.reply_to(m, 'Please provide a valid number')
@@ -81,7 +80,7 @@ def paid(m: Message):
     if not check_time_and_chat(m):
         return
 
-    amount_flt, valid_number = check_payment(m.text)
+    amount_flt, valid_number = check_payment(m.text, needs_description=False)
 
     if not valid_number:
         bot.reply_to(m, 'Please provide a valid number')
