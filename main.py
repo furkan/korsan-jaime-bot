@@ -1,11 +1,14 @@
 import logging
+from typing import Tuple
 
 from flask import Flask, request
 import telebot
 from telebot.types import Message
 
 import config
-from kjbot import users, add_item, remove_item, list_items, check_time_and_chat, display_status, check_payment, find_payee, edit_balances
+from kjbot import (users, add_item, remove_item, list_items,
+                   check_time_and_chat, display_status, check_payment,
+                   find_payee, edit_balances)
 
 app = Flask(__name__)
 
@@ -22,31 +25,31 @@ bot.set_webhook(url=URL)
 
 
 @app.route('/' + SECRET, methods=['POST'])
-def webhook():
+def webhook() -> Tuple[str, int]:
     update = telebot.types.Update.de_json(request.stream.read().decode('utf-8'))
     bot.process_new_updates([update])
     return 'ok', 200
 
 
 @bot.message_handler(commands=['start'])
-def start(m: Message):
-    if not check_time_and_chat(m):
+def start(m: Message) -> None:
+    if not check_time_and_chat(m.date, m.chat.id):
         return
 
     bot.reply_to(m, 'Hi!')
 
 
 @bot.message_handler(commands=['help'])
-def help(m: Message):
-    if not check_time_and_chat(m):
+def help(m: Message) -> None:
+    if not check_time_and_chat(m.date, m.chat.id):
         return
 
     bot.reply_to(m, config.help_txt, parse_mode='Markdown')
 
 
 @bot.message_handler(commands=['spent'])
-def spent(m: Message):
-    if not check_time_and_chat(m):
+def spent(m: Message) -> None:
+    if not check_time_and_chat(m.date, m.chat.id):
         return
 
     amount_flt, valid_number = check_payment(m.text, needs_description=True)
@@ -73,8 +76,8 @@ def spent(m: Message):
 
 
 @bot.message_handler(commands=['paid'])
-def paid(m: Message):
-    if not check_time_and_chat(m):
+def paid(m: Message) -> None:
+    if not check_time_and_chat(m.date, m.chat.id):
         return
 
     amount_flt, valid_number = check_payment(m.text, needs_description=False)
@@ -106,8 +109,8 @@ def paid(m: Message):
 
 
 @bot.message_handler(commands=['status'])
-def status(m: Message):
-    if not check_time_and_chat(m):
+def status(m: Message) -> None:
+    if not check_time_and_chat(m.date, m.chat.id):
         return
 
     msg = display_status()
@@ -119,8 +122,8 @@ def status(m: Message):
 
 
 @bot.message_handler(commands=['add'])
-def add(m: Message):
-    if not check_time_and_chat(m):
+def add(m: Message) -> None:
+    if not check_time_and_chat(m.date, m.chat.id):
         return
 
     try:
@@ -135,8 +138,8 @@ def add(m: Message):
 
 
 @bot.message_handler(commands=['remove'])
-def remove(m: Message):
-    if not check_time_and_chat(m):
+def remove(m: Message) -> None:
+    if not check_time_and_chat(m.date, m.chat.id):
         return
 
     try:
@@ -151,8 +154,8 @@ def remove(m: Message):
 
 
 @bot.message_handler(commands=['list'])
-def list(m: Message):
-    if not check_time_and_chat(m):
+def list(m: Message) -> None:
+    if not check_time_and_chat(m.date, m.chat.id):
         return
 
     msg = list_items()

@@ -1,10 +1,8 @@
 import ast
 from pathlib import Path
 from time import time
-from typing import List, Tuple
+from typing import Dict, List, Tuple
 import json
-
-from telebot.types import Message
 
 import config
 
@@ -13,7 +11,7 @@ ITEM_FILE: Path = Path(__file__).parent / 'items.json'
 
 INITIAL_UNIX_TIME: float = time()
 
-users: dict = {
+users: Dict[str, int] = {
     config.user1_id: 0,
     config.user2_id: 1
 }
@@ -21,9 +19,9 @@ users: dict = {
 NUMBER_OF_PEOPLE: int = len(users)
 
 
-def check_time_and_chat(m: Message) -> bool:
-    new_message: bool = m.date > INITIAL_UNIX_TIME
-    correct_chat: bool = m.chat.id == config.chat_id
+def check_time_and_chat(message_date: int, message_chat_id: int) -> bool:
+    new_message: bool = message_date > INITIAL_UNIX_TIME
+    correct_chat: bool = message_chat_id == config.chat_id
     return new_message and correct_chat
 
 
@@ -50,16 +48,19 @@ def display_status(balance_before: List[str] = ['', '', '']) -> str:
         balance_before_strings = ['', '', '']
 
     msg = (
-        f'*{config.user1_name}:*\n{float(balance[0]):.2f}{balance_before_strings[0]}\n'
-        f'*{config.user2_name}:*\n{float(balance[1]):.2f}{balance_before_strings[1]}\n'
-        f'*{config.user3_name}:*\n{float(balance[2]):.2f}{balance_before_strings[2]}\n'
+        f'*{config.user1_name}:*\n{float(balance[0]):.2f}'
+        f'{balance_before_strings[0]}\n'
+        f'*{config.user2_name}:*\n{float(balance[1]):.2f}'
+        f'{balance_before_strings[1]}\n'
+        f'*{config.user3_name}:*\n{float(balance[2]):.2f}'
+        f'{balance_before_strings[2]}\n'
     )
     return msg
 
 
 def check_payment(message: str, needs_description: bool) -> Tuple[float, bool]:
     message_words = message.split(' ')
-    
+
     try:
         amount = message_words[1]
     except Exception:
@@ -88,7 +89,9 @@ def find_payee(paidfrom: str) -> str:
     return paidto
 
 
-def edit_balances(payer_id: str, amount_flt: float, info: List) -> Tuple[List[str], bool]:
+def edit_balances(payer_id: str,
+                  amount_flt: float,
+                  info: List[str]) -> Tuple[List[str], bool]:
     with open(BALANCE_FILE) as file:
         balance = file.read().split(',')
 
