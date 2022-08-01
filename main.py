@@ -5,7 +5,7 @@ import telebot
 from telebot.types import Message
 
 import config
-from kjbot import add_item, remove_item, list_items, check_time_and_chat, display_status, check_payment, find_payee, edit_balances
+from kjbot import users, add_item, remove_item, list_items, check_time_and_chat, display_status, check_payment, find_payee, edit_balances
 
 app = Flask(__name__)
 
@@ -52,7 +52,7 @@ def spent(m: Message):
     amount_flt, valid_number = check_payment(m.text, needs_description=True)
 
     if not valid_number:
-        bot.reply_to(m, 'Please provide a valid number')
+        bot.reply_to(m, 'Please provide a valid amount with a description')
         return
 
     info = ['spent']
@@ -68,11 +68,8 @@ def spent(m: Message):
     except Exception:
         bot.send_message(config.chat_id, msg, parse_mode='Markdown')
 
-    bot.send_message(config.user1_id, m.text[7:], parse_mode='Markdown')
-
-    bot.send_message(config.user2_id, m.text[7:], parse_mode='Markdown')
-
-    bot.send_message(config.user3_id, m.text[7:], parse_mode='Markdown')
+    for user_id in users.keys():
+        bot.send_message(user_id, m.text[7:], parse_mode='Markdown')
 
 
 @bot.message_handler(commands=['paid'])
@@ -83,7 +80,7 @@ def paid(m: Message):
     amount_flt, valid_number = check_payment(m.text, needs_description=False)
 
     if not valid_number:
-        bot.reply_to(m, 'Please provide a valid number')
+        bot.reply_to(m, 'Please provide a valid amount')
         return
 
     paidfrom = m.from_user.id

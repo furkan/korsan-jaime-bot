@@ -15,8 +15,7 @@ INITIAL_UNIX_TIME: float = time()
 
 users: dict = {
     config.user1_id: 0,
-    config.user2_id: 1,
-    config.user3_id: 2
+    config.user2_id: 1
 }
 
 NUMBER_OF_PEOPLE: int = len(users)
@@ -59,16 +58,15 @@ def display_status(balance_before: List[str] = ['', '', '']) -> str:
 
 
 def check_payment(message: str, needs_description: bool) -> Tuple[float, bool]:
+    message_words = message.split(' ')
+    
     try:
-        amount = message.split(' ')[1]
+        amount = message_words[1]
     except Exception:
         return 0.0, False
 
-    if needs_description:
-        try:
-            _ = message.split(' ')[2:]
-        except Exception:
-            return 0.0, False
+    if needs_description and len(message_words) < 3:
+        return 0.0, False
 
     try:
         amount_flt = expr(amount)
