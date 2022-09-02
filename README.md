@@ -30,18 +30,24 @@ The bot will change the numbers to what they must be as payments take place.
 chat_id = 123456789
 
 user1_id = "123456789"
-user2_id = "123456789"
-user3_id = "123456789"
+user2_id = "123456788"
+user3_id = "123456787"
 
-user1_name = "good"
-user2_name = "bad"
-user3_name = "ugly"
+user1_name = "furkan"
+user2_name = "albert"
+user3_name = "nikola"
 
-user1_nicknames = ['good','well']
-user2_nicknames = ['bad','riri']
-user3_nicknames = ['ugly','unattractive']
+# '/paid 100 fa' works the same as '/paid 100 furkan'
+user1_nicknames = ['furkan', 'aldemir', 'fa', 'f']
+user2_nicknames = ['albert', 'einstein', 'ae', 'e']
+user3_nicknames = ['nikola', 'tesla', 'nt', 'n', 't']
 
-token = "longer-than-I-could-make-up-here"
+token = "OBTAINED_FROM_BOTFATHER"
+
+SECRET = 'TOTALLY_MADE_UP_FOR_FLASK_WEBHOOKS'
+
+URL = 'WHEREVER_THE_BOT_IS_HOSTED'
+
 ```
 
 #### Obtaining user_id
@@ -58,4 +64,6 @@ Add this bot to your group: [Chat ID Echo](https://telegram.me/chatid_echo_bot)
 
 ## Running the bot
 
-From the console: `python3 kjbot.py`
+From the console: `python3 main.py`
+
+As a docker compose service: `docker compose up -d`
