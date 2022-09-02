@@ -100,7 +100,7 @@ def edit_balances(payer_id: str,
 
     balance_before: List[str] = balance
 
-    balance_num: List[float] = [0.0] * len(balance)
+    balance_num: List[float] = [0.0] * NUMBER_OF_PEOPLE
 
     for i in range(len(balance_num)):
         balance_num[i] = float(balance[i])
