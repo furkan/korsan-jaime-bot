@@ -17,6 +17,11 @@ users: Dict[str, int] = {
     config.user2_id: 1
 }
 
+user_names: List[str] = [
+    config.user1_name,
+    config.user2_name
+]
+
 NUMBER_OF_PEOPLE: int = len(users)
 
 
@@ -36,26 +41,23 @@ def expr(code: str) -> float:
     return float(eval(code_object))
 
 
-def display_status(balance_before: List[str] = ['', '', '']) -> str:
+def display_status(balance_before: List[str] = ['']) -> str:
     with open(BALANCE_FILE) as file:
         balance: List[str] = file.read().split(',')
 
-    if balance_before != ['', '', '']:
-        balance_before_strings = [f'*  <--  *{float(balance_before[0]):.2f}',
-                                  f'*  <--  *{float(balance_before[1]):.2f}',
-                                  f'*  <--  *{float(balance_before[2]):.2f}']
-        # TODO: Stop hardcoding these to work for only 3 people
+    if balance_before != ['']:
+        balance_before_strings: List[str] = []
+        for i in range(NUMBER_OF_PEOPLE):
+            balance_before_strings.append(f'*  <--  *{float(balance_before[i]):.2f}')
     else:
-        balance_before_strings = ['', '', '']
+        balance_before_strings = [''] * NUMBER_OF_PEOPLE
 
-    msg = (
-        f'*{config.user1_name}:*\n{float(balance[0]):.2f}'
-        f'{balance_before_strings[0]}\n'
-        f'*{config.user2_name}:*\n{float(balance[1]):.2f}'
-        f'{balance_before_strings[1]}\n'
-        f'*{config.user3_name}:*\n{float(balance[2]):.2f}'
-        f'{balance_before_strings[2]}\n'
-    )
+    msg = ''
+    for i in range(NUMBER_OF_PEOPLE):
+        msg += (
+            f'*{user_names[i]}:*\n{float(balance[i]):.2f}'
+            f'{balance_before_strings[i]}\n'
+        )
     return msg
 
 
@@ -98,7 +100,7 @@ def edit_balances(payer_id: str,
 
     balance_before: List[str] = balance
 
-    balance_num: List[float] = [0.0, 0.0, 0.0]
+    balance_num: List[float] = [0.0] * len(balance)
 
     for i in range(len(balance_num)):
         balance_num[i] = float(balance[i])
@@ -109,19 +111,19 @@ def edit_balances(payer_id: str,
                 try:
                     balance_num[i] += (NUMBER_OF_PEOPLE - 1.0) * amount_flt / NUMBER_OF_PEOPLE
                 except Exception:
-                    return ['', '', ''], False
+                    return [''], False
             else:
                 try:
                     balance_num[i] -= amount_flt / NUMBER_OF_PEOPLE
                 except Exception:
-                    return ['', '', ''], False
+                    return [''], False
 
     elif info[0] == 'paid':
         try:
             balance_num[users[info[1]]] += amount_flt
             balance_num[users[info[2]]] -= amount_flt
         except Exception:
-            return ['', '', ''], False
+            return [''], False
 
     with open(BALANCE_FILE, 'w') as file:
         data = ''
