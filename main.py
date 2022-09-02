@@ -133,6 +133,10 @@ def add(m: Message) -> None:
         bot.reply_to(m, replies.EMPTY_ADD)
         return
 
+    if item == '':
+        bot.reply_to(m, replies.EMPTY_ADD)
+        return
+
     msg = add_item(item)
 
     bot.reply_to(m, msg, parse_mode='Markdown')
