@@ -5,7 +5,7 @@ START_GREETING: str = 'Hi there, kjbot at your service!'
 HELP: str = '''
 */start: * You clearly don\'t need this.
 */help: * Replies with this text.
-*/paid <x> <y>: * Use this when you gave *x* amount of money to <y>.
+*/paid <x> <y>: * Use this when you gave *x* amount of money to *y*.
 */spent <x> <y>: * Use this when the *x* amount of money you spent on *y* is for all members.
 */status: * Display the current balance.
 */add <x>: * Add *x* to chores/shopping list.
