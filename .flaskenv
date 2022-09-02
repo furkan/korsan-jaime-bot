@@ -1,1 +1,1 @@
-FLASK_APP=kjbot.py
+FLASK_APP=main.py

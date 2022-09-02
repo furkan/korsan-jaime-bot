@@ -1,134 +1,131 @@
-from flask import Flask, request
-import telebot
-import config
-import logging
-import time
+import ast
+from pathlib import Path
+from time import time
+from typing import Dict, List, Tuple
+import json
 
-TOKEN = config.token
-secret = config.secret
-url = config.URL + secret
+import config  # type: ignore
+import replies
 
-users = {
-    config.user1_id:0,
-    config.user2_id:1,
-    config.user3_id:2
+BALANCE_FILE: Path = Path(__file__).parent / 'balance.txt'
+ITEM_FILE: Path = Path(__file__).parent / 'items.json'
+
+INITIAL_UNIX_TIME: float = time()
+
+users: Dict[str, int] = {
+    config.user1_id: 0,
+    config.user2_id: 1
 }
 
-initial_unix_date = time.time()
-number_of_people = 3.0
+user_names: List[str] = [
+    config.user1_name,
+    config.user2_name
+]
 
-logger = telebot.logger
-telebot.logger.setLevel(logging.DEBUG)
+NUMBER_OF_PEOPLE: int = len(users)
 
-bot = telebot.TeleBot(TOKEN, threaded=False)
-bot.remove_webhook()
-bot.set_webhook(url=url)
 
-app = Flask(__name__)
+def check_time_and_chat(message_date: int, message_chat_id: int) -> bool:
+    new_message: bool = message_date > INITIAL_UNIX_TIME
+    correct_chat: bool = message_chat_id == config.chat_id
+    return new_message and correct_chat
 
-def correct_chat(chat_id):
-    if chat_id == config.chat_id:
-        return True
+
+def expr(code: str) -> float:
+    '''Eval a math expression and return the result'''
+    code = code.format(**{})
+
+    expr = ast.parse(code, mode='eval')
+    code_object = compile(expr, '<string>', 'eval')
+
+    return float(eval(code_object))
+
+
+def display_status(balance_before: List[str] = ['']) -> str:
+    with open(BALANCE_FILE) as file:
+        balance: List[str] = file.read().split(',')
+
+    if balance_before != ['']:
+        balance_before_strings: List[str] = []
+        for i in range(NUMBER_OF_PEOPLE):
+            balance_before_strings.append(f'*  <--  *{float(balance_before[i]):.2f}')
     else:
-        return False
+        balance_before_strings = [''] * NUMBER_OF_PEOPLE
 
-def display_status(m, balance_before = ['', '', '']):
-    with open('/home/kjbot/korsan-jaime-bot/balance.txt') as file:
-        balance = file.read().split(',')
+    msg = ''
+    for i in range(NUMBER_OF_PEOPLE):
+        msg += (
+            f'*{user_names[i]}:*\n{float(balance[i]):.2f}'
+            f'{balance_before_strings[i]}\n'
+        )
+    return msg
 
-    if balance_before != ['','','']:
-        balance_before_strings = ['*  <--  *' + str("%.2f" % float(balance_before[0])), '*  <--  *' + str("%.2f" % float(balance_before[1])), '*  <--  *' + str("%.2f" % float(balance_before[2]))]
-    else:
-        balance_before_strings = ['','','']
 
-    msg  =  '*'+ config.user1_name + ':*\n' + str("%.2f" % float(balance[0])) + balance_before_strings[0] \
-        + '\n*'+ config.user2_name + ': *\n' + str("%.2f" % float(balance[1])) + balance_before_strings[1] \
-        + '\n*'+ config.user3_name + ':*\n' + str("%.2f" % float(balance[2])) + balance_before_strings[2]
-    try:
-        bot.reply_to(m, msg, parse_mode='Markdown')
-    except:
-        bot.send_message(config.chat_id, msg, parse_mode='Markdown')
-
-def check_payment(m):
-    if correct_chat(m.chat.id) is False:
-        bot.reply_to(m, config.wrong_chat_txt)
-        return 'no'
+def check_payment(message: str, needs_description: bool) -> Tuple[float, bool]:
+    message_words = message.split(' ')
 
     try:
-        amount = m.text.split(' ')[1]
-    except:
-        bot.reply_to(m, config.empty_txt)
-        return 'no'
+        amount = message_words[1]
+    except Exception:
+        return 0.0, False
+
+    if needs_description and len(message_words) < 3:
+        return 0.0, False
 
     try:
-        amount_flt = float(amount)
-    except:
-        bot.reply_to(m, config.not_a_number_txt)
-        return 'no'
+        amount_flt = expr(amount)
+    except Exception:
+        return 0.0, False
 
-    return amount_flt
+    if amount_flt == 0.0:
+        return 0.0, False
 
-def find_payee(m,paidfrom):
-    try:
-        paidto_nickname = m.text.split(' ')[2]
-        paidto = 0
-        if paidfrom == config.user1_id:
-            if paidto_nickname in config.user2_nicknames:
-                paidto = config.user2_id
-            if paidto_nickname in config.user3_nicknames:
-                paidto = config.user3_id
-        if paidfrom == config.user2_id:
-            if paidto_nickname in config.user1_nicknames:
-                paidto = config.user1_id
-            if paidto_nickname in config.user3_nicknames:
-                paidto = config.user3_id
-        if paidfrom == config.user3_id:
-            if paidto_nickname in config.user1_nicknames:
-                paidto = config.user1_id
-            if paidto_nickname in config.user2_nicknames:
-                paidto = config.user2_id
-    except:
-        bot.reply_to(m, config.paid_to_whom_text)
-        return 0
+    return amount_flt, True
 
+
+def find_payee(paidfrom: str) -> str:
+    paidto = ''
+    if paidfrom == config.user1_id:
+        paidto = config.user2_id
+    if paidfrom == config.user2_id:
+        paidto = config.user1_id
     return paidto
 
-def edit_balances(m, amount_flt, info):
 
-    with open('/home/kjbot/korsan-jaime-bot/balance.txt') as file:
+def edit_balances(payer_id: str,
+                  amount_flt: float,
+                  info: List[str]) -> Tuple[List[str], bool]:
+    with open(BALANCE_FILE) as file:
         balance = file.read().split(',')
 
-    balance_before = balance
+    balance_before: List[str] = balance
 
-    balance_num = [0,0,0]
+    balance_num: List[float] = [0.0] * NUMBER_OF_PEOPLE
 
     for i in range(len(balance_num)):
         balance_num[i] = float(balance[i])
 
     if info[0] == 'spent':
         for i in range(len(balance_num)):
-            if i == users[str(m.from_user.id)]:
+            if i == users[payer_id]:
                 try:
-                    balance_num[i] += (number_of_people - 1.0) * amount_flt / number_of_people
-                except:
-                    bot.reply_to(m, 'Nope')
-                    return 0
+                    balance_num[i] += (NUMBER_OF_PEOPLE - 1.0) * amount_flt / NUMBER_OF_PEOPLE
+                except Exception:
+                    return [''], False
             else:
                 try:
-                    balance_num[i] -= amount_flt / number_of_people
-                except:
-                    bot.reply_to(m, 'Nope')
-                    return 0
+                    balance_num[i] -= amount_flt / NUMBER_OF_PEOPLE
+                except Exception:
+                    return [''], False
 
     elif info[0] == 'paid':
         try:
             balance_num[users[info[1]]] += amount_flt
             balance_num[users[info[2]]] -= amount_flt
-        except:
-            bot.reply_to(m, 'Nope')
-            return 0
+        except Exception:
+            return [''], False
 
-    with open('/home/kjbot/korsan-jaime-bot/balance.txt', 'w') as file:
+    with open(BALANCE_FILE, 'w') as file:
         data = ''
         for i in range(len(balance_num)):
             data += str(balance_num[i]) + ','
@@ -136,108 +133,52 @@ def edit_balances(m, amount_flt, info):
         data += '\n'
         file.write(data)
 
-    return balance_before
+    return balance_before, True
 
-@app.route('/'+secret, methods=['POST'])
-def webhook():
-    update = telebot.types.Update.de_json(request.stream.read().decode('utf-8'))
-    bot.process_new_updates([update])
-    return 'ok', 200
 
-@bot.message_handler(commands=['start'])
-def start(m):
-    if m.date < initial_unix_date:
-        return 'old message'
+def add_item(item: str) -> str:
+    with open(ITEM_FILE, 'r', encoding='utf-8') as f:
+        items = json.load(f)
+        items.append(item)
 
-    if not correct_chat(m.chat.id):
-        bot.reply_to(m, config.wrong_chat_txt)
-        return 'not the right chat'
+    with open(ITEM_FILE, 'w', encoding='utf-8') as f:
+        json.dump(items, f, ensure_ascii=False, indent=4)
 
-    bot.reply_to(m, 'Hi!')
+    msg = ''
+    for index, item in enumerate(items):
+        msg = msg + f'*{index}: *{item}\n'
 
-@bot.message_handler(commands=['help'])
-def help(m):
-    if m.date < initial_unix_date:
-        return 'old message'
+    return msg
 
-    if not correct_chat(m.chat.id):
-        bot.reply_to(m, config.wrong_chat_txt)
-        return 'not the right chat'
 
-    bot.reply_to(m, config.help_txt, parse_mode='Markdown')
+def remove_item(index: int) -> str:
+    with open(ITEM_FILE, 'r', encoding='utf-8') as f:
+        items = json.load(f)
+        try:
+            item = items.pop(index)
+        except Exception:
+            return replies.WRONG_INDEX
 
-@bot.message_handler(commands=['spent'])
-def spent(m):
-    if m.date < initial_unix_date:
-        return 'old message'
+    with open(ITEM_FILE, 'w', encoding='utf-8') as f:
+        json.dump(items, f, ensure_ascii=False, indent=4)
 
-    if not correct_chat(m.chat.id):
-        bot.reply_to(m, config.wrong_chat_txt)
-        return 'not the right chat'
+    msg = f'*{item}*' + ' is removed! \n\n'
 
-    amount_flt = check_payment(m)
+    for index, item in enumerate(items):
+        msg = msg + f'*{index}: *{item}\n'
 
-    if amount_flt == 'no':
-        return
+    return msg
 
-    if amount_flt == 0:
-        bot.reply_to(m, config.zero_txt)
-        return
 
-    info = ['spent']
+def list_items() -> str:
+    with open(ITEM_FILE, 'r', encoding='utf-8') as f:
+        items = json.load(f)
 
-    balance_before = edit_balances(m,amount_flt,info)
-    if balance_before == 0:
-        return
+    if len(items) != 0:
+        msg = ''
+        for index, item in enumerate(items):
+            msg = msg + f'*{index}: *{item}\n'
+    else:
+        msg = replies.NO_ITEMS
 
-    display_status(m, balance_before)
-
-    bot.send_message(config.user1_id, m.text[7:], parse_mode='Markdown')
-
-    bot.send_message(config.user2_id, m.text[7:], parse_mode='Markdown')
-
-    bot.send_message(config.user3_id, m.text[7:], parse_mode='Markdown')
-
-@bot.message_handler(commands=['paid'])
-def paid(m):
-    if m.date < initial_unix_date:
-        return 'old message'
-
-    if not correct_chat(m.chat.id):
-        bot.reply_to(m, config.wrong_chat_txt)
-        return 'not the right chat'
-
-    amount_flt = check_payment(m)
-
-    if amount_flt == 'no':
-        return
-
-    if amount_flt == 0:
-        bot.reply_to(m, config.zero_txt)
-        return
-
-    paidfrom = m.from_user.id
-    paidfrom = str(paidfrom)
-
-    paidto = find_payee(m,paidfrom)
-    if paidto == 0:
-        return
-
-    info = ['paid',paidfrom,paidto]
-
-    balance_before = edit_balances(m,amount_flt,info)
-    if balance_before == 0:
-        return
-
-    display_status(m, balance_before)
-
-@bot.message_handler(commands=['status'])
-def status(m):
-    if m.date < initial_unix_date:
-        return 'old message'
-
-    if not correct_chat(m.chat.id):
-        bot.reply_to(m, config.wrong_chat_txt)
-        return 'not the right chat'
-
-    display_status(m)
+    return msg

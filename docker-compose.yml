@@ -1,0 +1,10 @@
+version: '3.7'
+
+services:
+  bot:
+    build: .
+    volumes:
+      - ./:/kjbot
+    restart: always
+    working_dir: /kjbot
+    command: python3 main.py
