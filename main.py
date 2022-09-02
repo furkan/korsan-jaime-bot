@@ -2,10 +2,9 @@ import logging
 from typing import Tuple
 
 from flask import Flask, request
-import telebot
-from telebot.types import Message
+import telebot  # type: ignore
 
-import config
+import config  # type: ignore
 from kjbot import (users, add_item, remove_item, list_items,
                    check_time_and_chat, display_status, check_payment,
                    find_payee, edit_balances)
@@ -23,6 +22,8 @@ logger.setLevel(logging.DEBUG)
 bot: telebot.TeleBot = telebot.TeleBot(TOKEN, threaded=False)
 bot.remove_webhook()
 bot.set_webhook(url=URL)
+
+Message = telebot.types.Message
 
 
 @app.route('/' + SECRET, methods=['POST'])

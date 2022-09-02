@@ -4,7 +4,7 @@ from time import time
 from typing import Dict, List, Tuple
 import json
 
-import config
+import config  # type: ignore
 import replies
 
 BALANCE_FILE: Path = Path(__file__).parent / 'balance.txt'
