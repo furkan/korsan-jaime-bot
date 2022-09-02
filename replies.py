@@ -22,7 +22,7 @@ To whom did you pay that:
 
 # /spent
 VALID_AMT_W_DESC: str = '''
-Please provide a valid amount with a description
+Please provide a valid amount with a description:
 /spent 1250 rent
 '''
 
