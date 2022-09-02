@@ -9,6 +9,7 @@ import config
 from kjbot import (users, add_item, remove_item, list_items,
                    check_time_and_chat, display_status, check_payment,
                    find_payee, edit_balances)
+import replies
 
 app = Flask(__name__)
 
@@ -36,7 +37,7 @@ def start(m: Message) -> None:
     if not check_time_and_chat(m.date, m.chat.id):
         return
 
-    bot.reply_to(m, 'Hi!')
+    bot.reply_to(m, replies.START_GREETING)
 
 
 @bot.message_handler(commands=['help'])
@@ -44,7 +45,7 @@ def help(m: Message) -> None:
     if not check_time_and_chat(m.date, m.chat.id):
         return
 
-    bot.reply_to(m, config.help_txt, parse_mode='Markdown')
+    bot.reply_to(m, replies.HELP, parse_mode='Markdown')
 
 
 @bot.message_handler(commands=['spent'])
@@ -55,7 +56,7 @@ def spent(m: Message) -> None:
     amount_flt, valid_number = check_payment(m.text, needs_description=True)
 
     if not valid_number:
-        bot.reply_to(m, 'Please provide a valid amount with a description')
+        bot.reply_to(m, replies.VALID_AMT_W_DESC)
         return
 
     info = ['spent']
@@ -83,7 +84,7 @@ def paid(m: Message) -> None:
     amount_flt, valid_number = check_payment(m.text, needs_description=False)
 
     if not valid_number:
-        bot.reply_to(m, 'Please provide a valid amount')
+        bot.reply_to(m, replies.VALID_AMT)
         return
 
     paidfrom = m.from_user.id
@@ -91,7 +92,7 @@ def paid(m: Message) -> None:
 
     paidto = find_payee(paidfrom)
     if paidto == '':
-        bot.reply_to(m, config.paid_to_whom_text)
+        bot.reply_to(m, replies.PAID_TO_WHOM)
         return
 
     info = ['paid', paidfrom, paidto]
@@ -129,7 +130,7 @@ def add(m: Message) -> None:
     try:
         item: str = m.text[5:]
     except Exception:
-        bot.reply_to(m, 'What do we need son? :D')
+        bot.reply_to(m, replies.EMPTY_ADD)
         return
 
     msg = add_item(item)
@@ -145,7 +146,7 @@ def remove(m: Message) -> None:
     try:
         index = int(m.text.split(' ')[1])
     except Exception:
-        bot.reply_to(m, 'Try an appropriate index.')
+        bot.reply_to(m, replies.WRONG_INDEX)
         return
 
     msg = remove_item(index)

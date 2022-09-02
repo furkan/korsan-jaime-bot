@@ -5,6 +5,7 @@ from typing import Dict, List, Tuple
 import json
 
 import config
+import replies
 
 BALANCE_FILE: Path = Path(__file__).parent / 'balance.txt'
 ITEM_FILE: Path = Path(__file__).parent / 'items.json'
@@ -154,7 +155,7 @@ def remove_item(index: int) -> str:
         try:
             item = items.pop(index)
         except Exception:
-            return 'WRONG_INDEX'
+            return replies.WRONG_INDEX
 
     with open(ITEM_FILE, 'w', encoding='utf-8') as f:
         json.dump(items, f, ensure_ascii=False, indent=4)
@@ -176,6 +177,6 @@ def list_items() -> str:
         for index, item in enumerate(items):
             msg = msg + f'*{index}: *{item}\n'
     else:
-        msg = 'No items'
+        msg = replies.NO_ITEMS
 
     return msg
