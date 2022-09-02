@@ -3,6 +3,7 @@ from typing import Tuple
 
 from flask import Flask, request
 import telebot  # type: ignore
+from telebot.types import Message  # type: ignore
 
 import config  # type: ignore
 from kjbot import (users, add_item, remove_item, list_items,
@@ -22,8 +23,6 @@ logger.setLevel(logging.DEBUG)
 bot: telebot.TeleBot = telebot.TeleBot(TOKEN, threaded=False)
 bot.remove_webhook()
 bot.set_webhook(url=URL)
-
-Message = telebot.types.Message
 
 
 @app.route('/' + SECRET, methods=['POST'])
