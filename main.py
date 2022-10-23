@@ -14,22 +14,12 @@ import replies
 app = Flask(__name__)
 
 TOKEN: str = config.token
-SECRET: str = config.SECRET
-URL: str = config.URL + SECRET
+URL: str = config.URL + TOKEN
 
 logger: logging.Logger = telebot.logger
 logger.setLevel(logging.DEBUG)
 
 bot: telebot.TeleBot = telebot.TeleBot(TOKEN, threaded=False)
-bot.remove_webhook()
-bot.set_webhook(url=URL)
-
-
-@app.route('/' + SECRET, methods=['POST'])
-def webhook() -> Tuple[str, int]:
-    update = telebot.types.Update.de_json(request.stream.read().decode('utf-8'))
-    bot.process_new_updates([update])
-    return 'ok', 200
 
 
 @bot.message_handler(commands=['start'])
@@ -166,3 +156,5 @@ def list(m: Message) -> None:
     msg = list_items()
 
     bot.reply_to(m, msg, parse_mode='Markdown')
+
+bot.infinity_polling()
