@@ -1,8 +1,8 @@
 import ast
+import json
 from pathlib import Path
 from time import time
 from typing import Dict, List, Tuple
-import json
 
 import config  # type: ignore
 import replies

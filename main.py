@@ -1,15 +1,14 @@
 import logging
-from typing import Tuple
 
-from flask import Flask, request
 import telebot  # type: ignore
+from flask import Flask
 from telebot.types import Message  # type: ignore
 
 import config  # type: ignore
-from kjbot import (users, add_item, remove_item, list_items,
-                   check_time_and_chat, display_status, check_payment,
-                   find_payee, edit_balances)
 import replies
+from kjbot import (add_item, check_payment, check_time_and_chat,
+                   display_status, edit_balances, find_payee, list_items,
+                   remove_item, users)
 
 app = Flask(__name__)
 
@@ -156,5 +155,6 @@ def list(m: Message) -> None:
     msg = list_items()
 
     bot.reply_to(m, msg, parse_mode='Markdown')
+
 
 bot.infinity_polling()
