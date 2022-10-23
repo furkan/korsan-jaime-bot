@@ -1,5 +1,8 @@
-config.py
-balance.txt
-venv/
 __pycache__/
+.mypy_cache/
 .vscode/
+venv/
+
+balance.txt
+config.py
+items.json
