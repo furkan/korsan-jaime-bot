@@ -95,6 +95,9 @@ def find_payee(paidfrom: str) -> str:
 def edit_balances(payer_id: str,
                   amount_flt: float,
                   info: List[str]) -> Tuple[List[str], bool]:
+    if payer_id not in users.keys():
+        return [''], False
+
     with open(BALANCE_FILE) as file:
         balance = file.read().split(',')
 
