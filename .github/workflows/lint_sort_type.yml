@@ -24,6 +24,6 @@ jobs:
       - name: Lint with flake8
         run: flake8 . --count --statistics --max-line-length 120
       - name: Import orders with isort
-        run: isort . --check-only --diff
+        run: isort . --check-only
       - name: Type check with mypy
         run: mypy .
